@@ -60,7 +60,7 @@ pipeline {
                     "docker pull ${DOCKER_IMAGE}:${env.BUILD_NUMBER} && \\
                      docker stop spring-app || true && \\
                      docker rm spring-app || true && \\
-                     docker run -d --name spring-app -p 8080:8080 ${DOCKER_IMAGE}:${env.BUILD_NUMBER}"
+                     docker run -d --name spring-app -p 9090:8080 ${DOCKER_IMAGE}:${env.BUILD_NUMBER}"
                     """
                 }
             }
