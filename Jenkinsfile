@@ -3,9 +3,9 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "your-dockerhub-username/spring-app"
-        SERVER_USER  = "makara"
+        SERVER_USER  = "makarajr"
         SERVER_HOST  = "167.172.139.6"
-        SSH_CRED_ID  = "a468b279-b1b8-44d9-9b40-a5d74fc849d1" // Jenkins credential ID for SSH
+        SSH_CRED_ID  = "bee195fe-71cc-45d6-9f12-858b7bed765c" // Jenkins credential ID for SSH
     }
 
     stages {
