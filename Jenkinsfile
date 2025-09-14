@@ -1,38 +1,30 @@
 pipeline {
     agent any
 
+    tools {
+        jdk 'Java-21'       // Name you added in Jenkins Global Tool Configuration
+        maven 'Maven-3.8.8' // Name you added in Jenkins Global Tool Configuration
+    }
+
     environment {
-        DOCKER_IMAGE = "your-dockerhub-username/spring-app"
+        DOCKER_IMAGE = "makarajr126/spring-app"
         SERVER_USER  = "makarajr"
         SERVER_HOST  = "167.172.139.6"
-        SSH_CRED_ID  = "bee195fe-71cc-45d6-9f12-858b7bed765c" // Jenkins credential ID for SSH
+        SSH_CRED_ID  = "bee195fe-71cc-45d6-9f12-858b7bed765c" // Jenkins SSH credential ID
     }
 
     stages {
         stage('Checkout') {
             steps {
+                echo 'Checking out Git repository...'
                 git branch: 'main', url: 'https://github.com/noevchanmakara126/test-for-jenkins.git'
             }
         }
 
-        stage('Build') {
+        stage('Build & Test') {
             steps {
-                echo 'Building Spring Boot project...'
-                sh 'mvn clean package -DskipTests'
-            }
-        }
-
-        stage('Unit Test') {
-            steps {
-                echo 'Running unit tests...'
-                sh 'mvn test'
-            }
-        }
-
-        stage('Package') {
-            steps {
-                echo 'Packaging jar...'
-                sh 'mvn package -DskipTests'
+                echo 'Building and testing Spring Boot project...'
+                sh 'mvn clean package' // Add -DskipTests if you want to skip tests
             }
         }
 
@@ -46,7 +38,9 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    echo 'Logging in to Docker Hub...'
                     sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    echo "Pushing Docker image ${DOCKER_IMAGE}:${env.BUILD_NUMBER}..."
                     sh "docker push ${DOCKER_IMAGE}:${env.BUILD_NUMBER}"
                 }
             }
@@ -54,6 +48,7 @@ pipeline {
 
         stage('Deploy to Server') {
             steps {
+                echo 'Deploying Docker container on remote server...'
                 sshagent([env.SSH_CRED_ID]) {
                     sh """
                     ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} \\
@@ -69,10 +64,10 @@ pipeline {
 
     post {
         success {
-            echo 'Spring Boot CI/CD pipeline succeeded!'
+            echo '✅ Spring Boot CI/CD pipeline succeeded!'
         }
         failure {
-            echo 'Pipeline failed. Check logs.'
+            echo '❌ Pipeline failed. Check logs!'
         }
     }
 }
