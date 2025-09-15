@@ -11,6 +11,10 @@ pipeline {
         // Credential ID for the SSH agent
         SSH_CRED_ID = '433582c6-5ec0-45a7-bcb3-10dbc91b6759'
     }
+    options {
+        withMaven(mavenLocalRepo: '/home/makara/.m2/repository')
+    }
+
 
     stages {
         stage('1. Build') {
