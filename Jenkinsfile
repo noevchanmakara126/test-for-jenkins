@@ -33,13 +33,9 @@ pipeline {
             steps {
                 script {
                     def commitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-                    def imageTag = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:${commitHash}"
                     def latestTag = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:latest"
 
-                    sh "docker build -t ${imageTag} -t ${latestTag} ."
-
                     withDockerRegistry(credentialsId: "${DOCKER_CRED_ID}", url: "") {
-                        sh "docker push ${imageTag}"
                         sh "docker push ${latestTag}"
                     }
                 }
