@@ -29,24 +29,18 @@ pipeline {
             }
         }
 
-       stage('Build and Push Docker Image') {
-           steps {
-               script {
-                   def commitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-                   def latestTag = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:latest"
-//                    def commitTag = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:${commitHash}"
+        stage('Build and Push Docker Image') {
+            steps {
+                script {
+                    def commitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                    def latestTag = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:latest"
 
-                   // Build the Docker image
-                   sh "docker build -t ${latestTag} ."
-
-                   // Push to Docker Hub
-                   withDockerRegistry(credentialsId: "${DOCKER_CRED_ID}", url: "") {
-                       sh "docker push ${latestTag}"
-
-                   }
-               }
-           }
-       }
+                    withDockerRegistry(credentialsId: "${DOCKER_CRED_ID}", url: "") {
+                        sh "docker push ${latestTag}"
+                    }
+                }
+            }
+        }
 
         stage('Deploy to Production') {
             steps {
