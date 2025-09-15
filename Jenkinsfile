@@ -40,12 +40,12 @@ pipeline {
                 def latestTag = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:latest"
 
                 // Build Docker image
-                sh "docker build -t ${imageTag} -t ${latestTag} ."
+                sh "docker build -t ${latestTag} ."
 
                 // Push both tags
                 withDockerRegistry(credentialsId: "${DOCKER_CRED_ID}", url: "") {
                     echo 'Pushing image to Docker Hub...'
-                    sh "docker push ${imageTag}"
+//                     sh "docker push ${imageTag}"
                     sh "docker push ${latestTag}"
                 }
             }
