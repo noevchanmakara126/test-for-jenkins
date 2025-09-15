@@ -37,7 +37,9 @@ pipeline {
                 script {
                     def commitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
                     def imageTag = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:${commitHash}"
-                    docker.build(imageTag)
+
+                    // Build Docker image manually (instead of docker.build)
+                    sh "docker build -t ${imageTag} ."
 
                     withDockerRegistry(credentialsId: "${DOCKER_CRED_ID}", url: "") {
                         echo 'Pushing image to Docker Hub...'
@@ -46,6 +48,7 @@ pipeline {
                 }
             }
         }
+
 
         stage('4. Deploy to Production') {
             steps {
