@@ -52,9 +52,6 @@ pipeline {
               }
           }
       }
-
-
-
         stage('4. Deploy to Production') {
             steps {
                 echo 'Deploying with Docker Compose on a remote server...'
