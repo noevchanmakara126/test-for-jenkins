@@ -1,50 +1,44 @@
 pipeline {
     agent any
 
+    triggers {
+        githubPush()   // 👈 Automatically trigger build when GitHub notifies Jenkins
+    }
+
     environment {
-        // Your Docker Hub username
         DOCKER_HUB_USERNAME = 'makarajr126'
-        // Name of the Docker image
         DOCKER_IMAGE_NAME = 'spring-app'
-        // Credential ID configured in Jenkins for Docker Hub
         DOCKER_CRED_ID = 'a990e212-cc96-415d-9fe6-035b49c77db4'
-        // Credential ID for the SSH agent
         SSH_CRED_ID = '433582c6-5ec0-45a7-bcb3-10dbc91b6759'
     }
 
     stages {
-        stage('1. Build') {
+        stage('Build JAR') {
             steps {
-                echo 'Building and packaging the project...'
                 withMaven(maven: 'M3') {
                     sh 'mvn clean package -DskipTests'
                 }
             }
         }
 
-        stage('2. Run Unit Tests') {
+        stage('Run Unit Tests') {
             steps {
-                echo 'Running unit tests...'
                 withMaven(maven: 'M3') {
                     sh 'mvn test'
                 }
             }
         }
 
-        stage('3. Build and Push Docker Image') {
+        stage('Build and Push Docker Image') {
             steps {
-                echo 'Building Docker image...'
                 script {
                     def commitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
                     def imageTag = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:${commitHash}"
                     def latestTag = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:latest"
 
-                    // Build Docker image with both tags
                     sh "docker build -t ${imageTag} -t ${latestTag} ."
 
-                    // Push both tags
                     withDockerRegistry(credentialsId: "${DOCKER_CRED_ID}", url: "") {
-                        echo 'Pushing image to Docker Hub...'
                         sh "docker push ${imageTag}"
                         sh "docker push ${latestTag}"
                     }
@@ -52,9 +46,8 @@ pipeline {
             }
         }
 
-        stage('4. Deploy to Production') {
+        stage('Deploy to Production') {
             steps {
-                echo 'Deploying with Docker Compose on remote server...'
                 sshagent(["${SSH_CRED_ID}"]) {
                     sh """
                         ssh makara@167.172.139.6 '
