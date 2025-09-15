@@ -38,10 +38,10 @@ pipeline {
                   def commitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
                   // Use latest + commit hash for traceability
                   def imageTag = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:${commitHash}"
-                  def latestTag = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:latest"
+//                   def latestTag = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:latest"
 
                   // Build Docker image
-                  sh "docker build -t ${imageTag} -t ${latestTag} ."
+                  sh "docker build -t ${imageTag} ."
 
                   // Push both tags
                   withDockerRegistry(credentialsId: "${DOCKER_CRED_ID}", url: "") {
