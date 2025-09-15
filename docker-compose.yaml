@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+
+  spring-boot-app:
+    build: /home/makara/PracticeJenkins/test-for-jenkins
+    ports:
+      - "9090:9090"
+    depends_on:
+      - postgres-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://134.209.57.122:30030/postgres
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    networks:
+      - app-network
+networks:
+  app-network:
+    driver: bridge
