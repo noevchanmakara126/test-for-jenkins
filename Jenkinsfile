@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     triggers {
-        githubPush()
+        githubPush()   // 👈 Automatically trigger build when GitHub notifies Jenkins
     }
 
     environment {
@@ -34,9 +34,6 @@ pipeline {
                 script {
                     def commitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
                     def latestTag = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:latest"
-
-                    // This is the added line to build the Docker image locally
-                    sh "docker build -t ${latestTag} ."
 
                     withDockerRegistry(credentialsId: "${DOCKER_CRED_ID}", url: "") {
                         sh "docker push ${latestTag}"
