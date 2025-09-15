@@ -8,7 +8,7 @@ pipeline {
     environment {
         DOCKER_HUB_USERNAME = 'makarajr126'
         DOCKER_IMAGE_NAME = 'spring-app'
-//         DOCKER_CRED_ID = 'dckr_pat_Qe92AJ2xHNtCPno75wyGny-mOjA'
+        DOCKER_CRED_ID = ''
         SSH_CRED_ID = '433582c6-5ec0-45a7-bcb3-10dbc91b6759'
     }
 
