@@ -31,27 +31,26 @@ pipeline {
             }
         }
 
-      stage('3. Build and Push Docker Image') {
-          steps {
-              echo 'Building Docker image...'
-              script {
-                  def commitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-                  // Use latest + commit hash for traceability
-                  def imageTag = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:latest"
-//                   def latestTag = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:latest"
+    stage('3. Build and Push Docker Image') {
+        steps {
+            echo 'Building Docker image...'
+            script {
+                def commitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                def imageTag = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:${commitHash}"
+                def latestTag = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:latest"
 
-                  // Build Docker image
-                  sh "docker build -t ${imageTag} ."
+                // Build Docker image
+                sh "docker build -t ${imageTag} -t ${latestTag} ."
 
-                  // Push both tags
-                  withDockerRegistry(credentialsId: "${DOCKER_CRED_ID}", url: "") {
-                      echo 'Pushing image to Docker Hub...'
-                      sh "docker push ${imageTag}"
-                      sh "docker push ${latestTag}"
-                  }
-              }
-          }
-      }
+                // Push both tags
+                withDockerRegistry(credentialsId: "${DOCKER_CRED_ID}", url: "") {
+                    echo 'Pushing image to Docker Hub...'
+                    sh "docker push ${imageTag}"
+                    sh "docker push ${latestTag}"
+                }
+            }
+        }
+    }
         stage('4. Deploy to Production') {
             steps {
                 echo 'Deploying with Docker Compose on a remote server...'
