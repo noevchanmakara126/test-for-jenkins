@@ -38,7 +38,7 @@ pipeline {
 
                     docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_CRED_ID}") {
                         def app = docker.build("${latestTag}", ".")
-                        app.push()
+
                     }
                 }
             }
