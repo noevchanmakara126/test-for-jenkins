@@ -41,11 +41,6 @@ pipeline {
                     sh "docker rm -f jenkins-container"
                     sh "doccker run -d -p 9090:9090 --name jenkins-container ${latestTag}"
 
-                    // Push Docker image to Docker Hub
-//                     withDockerRegistry(credentialsId: "${DOCKER_CRED_ID}", url: "") {
-//                         sh "docker push ${latestTag}"
-//                         sh "docker push ${commitTag}"
-//                     }
                 }
             }
         }
