@@ -38,6 +38,7 @@ pipeline {
 
                     // Build Docker image with both tags
                     sh "docker build -t ${latestTag} ."
+                    sh "docker rm -f jenkins-container"
                     sh "doccker run -d -p 9090:9090 --name jenkins-container ${latestTag}"
 
                     // Push Docker image to Docker Hub
@@ -49,20 +50,20 @@ pipeline {
             }
         }
 
-//         stage('Deploy to Production') {
-//             steps {
-//                 sshagent(["${SSH_CRED_ID}"]) {
-//                     sh """
-//                         ssh makara@167.172.139.6 '
-//                             cd /home/makara/PracticeJenkins/test-for-jenkins &&
-//                             docker-compose pull &&
-//                             docker-compose up -d --build --force-recreate
-//                         '
-//                     """
-//                 }
-//             }
-//         }
-//     }
+        stage('Deploy to Production') {
+            steps {
+                sshagent(["${SSH_CRED_ID}"]) {
+                    sh """
+                        ssh makara@167.172.139.6 '
+                            cd /home/makara/PracticeJenkins/test-for-jenkins &&
+                            docker-compose pull &&
+                            docker-compose up -d --build --force-recreate
+                        '
+                    """
+                }
+            }
+        }
+    }
 
     post {
         failure {
