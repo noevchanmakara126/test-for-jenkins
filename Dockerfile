@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Copy everything and build the JAR
 COPY . .
-RUN mvn clean package -DskipTests
+
 
 # Stage 2: Run the Spring Boot app
 FROM eclipse-temurin:21-jre-alpine
