@@ -12,7 +12,24 @@ pipeline {
         SSH_CRED_ID         = '433582c6-5ec0-45a7-bcb3-10dbc91b6759'  // SSH credential ID
     }
 
-        stage('Build and Push Docker Image') {
+    stages {
+        stage('Build JAR') {
+            steps {
+                withMaven(maven: 'M3') {
+                    sh 'mvn clean package -DskipTests'
+                }
+            }
+        }
+
+        stage('Run Unit Tests') {
+            steps {
+                withMaven(maven: 'M3') {
+                    sh 'mvn test'
+                }
+            }
+        }
+
+        stage('Build & Push Docker Image') {
             steps {
                 script {
                     def commitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
@@ -20,9 +37,10 @@ pipeline {
                     def commitTag  = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:${commitHash}"
 
                     docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_CRED_ID}") {
-                                            def app = docker.build("${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}", ".")
-                                        }
-
+                        def app = docker.build("${latestTag}", ".")
+                        app.push()
+                        app.push(commitTag)
+                    }
                 }
             }
         }
@@ -44,10 +62,10 @@ pipeline {
 
     post {
         failure {
-            echo "Pipeline failed. Please check the logs."
+            echo "❌ Pipeline failed. Please check the logs."
         }
         success {
-            echo "Pipeline completed successfully!"
+            echo "✅ Pipeline completed successfully!"
         }
     }
 }
