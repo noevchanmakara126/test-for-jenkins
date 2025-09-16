@@ -30,7 +30,7 @@ pipeline {
         }
         stage('remove container'){
            steps {
-            sh 'docker rm -rf spring-app-container '
+            sh 'docker rm -f spring-app-container '
            }
         }
 
