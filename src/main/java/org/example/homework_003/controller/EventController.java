@@ -38,4 +38,8 @@ public class EventController {
     public ResponseEntity<?> deleteEventById(@PathVariable("event-id")Long id){
         return eventService.deleteEventById(id);
     }
+    @GetMapping("/{test}")
+    public ResponseEntity<ApiRespone<List<Event>>> getHello(@RequestParam(defaultValue = "1") Integer page , @RequestParam(defaultValue = "5")Integer size){
+        return eventService.getAllEvents(page,size);
+    }
 }
