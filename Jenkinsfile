@@ -28,6 +28,11 @@ pipeline {
                 }
             }
         }
+        stage('remove container'){
+           steps {
+            sh 'docker rm -rf spring-app-container '
+           }
+        }
 
         stage('Build & Push Docker Image') {
             steps {
@@ -38,7 +43,7 @@ pipeline {
 
                     docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_CRED_ID}") {
                         def app = docker.build("${latestTag}", ".")
-                        app.run("rm -f spring-app-container")
+
                        app.run("-d -p 9090:9090 --name spring-app-container")
 
                     }
