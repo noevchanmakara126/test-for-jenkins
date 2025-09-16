@@ -36,7 +36,7 @@ pipeline {
                     def latestTag  = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:latest"
                     def commitTag  = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:${commitHash}"
 
-                    docker.withRegistry('https://hub.docker.com/repository/docker/makarajr126/spring-app/', "${DOCKER_CRED_ID}") {
+                    docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_CRED_ID}") {
                         def app = docker.build("${latestTag}", ".")
                         app.push()
                     }
