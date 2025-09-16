@@ -36,14 +36,9 @@ pipeline {
                     def latestTag  = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:latest"
                     def commitTag  = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:${commitHash}"
 
-                    withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                                            sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
+                    docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_CRED_ID}") {
+                                            def app = docker.build("${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}", ".")
                                         }
-
-                    // Build Docker image with both tags
-                    sh "docker build -t ${latestTag} ."
-                    sh "docker rm -f jenkins-container"
-                    sh "docker run -d -p 9090:9090 --name jenkins-container ${latestTag}"
 
                 }
             }
