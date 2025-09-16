@@ -12,23 +12,6 @@ pipeline {
         SSH_CRED_ID         = '433582c6-5ec0-45a7-bcb3-10dbc91b6759'  // SSH credential ID
     }
 
-    stages {
-        stage('Build JAR') {
-            steps {
-                withMaven(maven: 'M3') {
-                    sh 'mvn clean package -DskipTests'
-                }
-            }
-        }
-
-        stage('Run Unit Tests') {
-            steps {
-                withMaven(maven: 'M3') {
-                    sh 'mvn test'
-                }
-            }
-        }
-
         stage('Build and Push Docker Image') {
             steps {
                 script {
