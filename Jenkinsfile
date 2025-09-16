@@ -28,9 +28,10 @@ pipeline {
                 }
             }
         }
-        stage('remove container'){
+        stage('remove container and images'){
            steps {
             sh 'docker rm -f spring-app-container '
+            sh 'docker rmi -f makarajr126/spring-app:latest '
            }
         }
 
