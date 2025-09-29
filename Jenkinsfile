@@ -13,10 +13,24 @@ spec:
     command:
     - cat
     tty: true
+    volumeMounts:
+    - name: workspace-volume
+      mountPath: /workspace
   - name: kaniko
     image: gcr.io/kaniko-project/executor:latest
     securityContext:
       runAsUser: 0
+    volumeMounts:
+    - name: workspace-volume
+      mountPath: /workspace
+  - name: jnlp
+    image: jenkins/inbound-agent:3341.v0766d82b_dec0-1
+    volumeMounts:
+    - name: workspace-volume
+      mountPath: /workspace
+  volumes:
+  - emptyDir: {}
+    name: workspace-volume
 """
         }
     }
@@ -47,7 +61,7 @@ spec:
         stage('Build JAR') {
             steps {
                 container('maven') {
-                    sh 'mvn clean package -DskipTests'
+                    sh 'mvn clean package -DskipTests -DoutputDirectory=/workspace'
                 }
             }
         }
@@ -65,12 +79,12 @@ spec:
                 container('kaniko') {
                     withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         script {
-                            // Use Jenkins BUILD_NUMBER as Docker image tag
+                            // Docker tag using Jenkins build number
                             def buildTag = "${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}"
                             sh """
                             /kaniko/executor \
-                              --dockerfile=Dockerfile \
-                              --context=dir://. \
+                              --dockerfile=/workspace/Dockerfile \
+                              --context=dir:///workspace \
                               --destination=${DOCKER_HUB_USERNAME}/${DOCKER_IMAGE_NAME}:latest \
                               --destination=${buildTag} \
                               --registry-user=${DOCKER_USER} \
