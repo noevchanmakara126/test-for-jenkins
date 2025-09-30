@@ -1,64 +1,60 @@
 pipeline {
-    agent any
-
-    triggers {
-        githubPush()   // Trigger on GitHub push
-    }
+    agent { label 'docker-agent' } // The label of your new pod template
 
     environment {
-        DOCKER_HUB_USERNAME = 'makarajr126'
-        DOCKER_IMAGE_NAME   = 'spring-app'
-        DOCKER_CRED_ID      = 'd3b37208-0637-449b-bbd2-e15241f4409c'  // Docker Hub PAT credential ID
-        SSH_CRED_ID         = '433582c6-5ec0-45a7-bcb3-10dbc91b6759'  // SSH credential ID
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        DOCKER_IMAGE = "makarajr126/spring-app"
+        CONTAINER_NAME = "spring-app-c"
     }
 
     stages {
-        stage('Build JAR') {
+        stage('Stop & Remove Existing Container') {
             steps {
-                withMaven(maven: 'M3') {
-                    sh 'mvn clean package -DskipTests'
+                sh """
+                if [ \$(docker ps -q -f name=${CONTAINER_NAME}) ]; then
+                    docker stop ${CONTAINER_NAME}
+                fi
+                if [ \$(docker ps -a -q -f name=${CONTAINER_NAME}) ]; then
+                    docker rm ${CONTAINER_NAME}
+                fi
+                """
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh """
+                docker build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} .
+                docker tag ${DOCKER_IMAGE}:${BUILD_NUMBER} ${DOCKER_IMAGE}:latest
+                """
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh """
+                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    docker push ${DOCKER_IMAGE}:${BUILD_NUMBER}
+                    docker push ${DOCKER_IMAGE}:latest
+                    docker logout
+                    """
                 }
             }
         }
 
-        stage('Run Unit Tests') {
+        stage('Deploy New Container') {
             steps {
-                withMaven(maven: 'M3') {
-                    sh 'mvn test'
-                }
+                sh """
+                docker pull ${DOCKER_IMAGE}:${BUILD_NUMBER}
+                docker run -d --name ${CONTAINER_NAME} -p 8080:8080 ${DOCKER_IMAGE}:${BUILD_NUMBER}
+                """
             }
-        }
-//         stage('remove container and images'){
-//            steps {
-//             sh 'docker rm -f spring-app-container '
-//             sh 'docker rmi -f makarajr126/spring-app:latest '
-//            }
-//         }
-
-       stage('Build & Push Docker Image') {
-             steps {
-                 script {
-                     def commitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-                     def latestTag  = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:latest"
-                     def commitTag  = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:${commitHash}"
-
-                     docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_CRED_ID}") {
-                         def app = docker.build("${latestTag}", ".")
-
-                        app.run("-d -p 9090:9090 --name spring-app-container")
-
-                     }
-                 }
-             }
         }
     }
 
     post {
-        failure {
-            echo "❌ Pipeline failed. Please check the logs."
-        }
-        success {
-            echo "✅ Pipeline completed successfully!"
-        }
+        success { echo "✅ Deployment successful! Version: ${BUILD_NUMBER}" }
+        failure { echo "❌ Deployment failed." }
     }
 }
