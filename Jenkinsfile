@@ -15,7 +15,7 @@ pipeline {
     stages {
         stage('Build JAR') {
             steps {
-                withMaven(maven: 'Maven 3.9.3') {
+                withMaven(maven: 'M3') {
                     sh 'mvn clean package -DskipTests'
                 }
             }
@@ -28,29 +28,29 @@ pipeline {
                 }
             }
         }
-        stage('remove container and images'){
-           steps {
-            sh 'docker rm -f spring-app-container '
-            sh 'docker rmi -f makarajr126/spring-app:latest '
-           }
-        }
-
-//         stage('Build & Push Docker Image') {
-//             steps {
-//                 script {
-//                     def commitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-//                     def latestTag  = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:latest"
-//                     def commitTag  = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:${commitHash}"
-//
-//                     docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_CRED_ID}") {
-//                         def app = docker.build("${latestTag}", ".")
-//
-//                        app.run("-d -p 9090:9090 --name spring-app-container")
-//
-//                     }
-//                 }
-//             }
+//         stage('remove container and images'){
+//            steps {
+//             sh 'docker rm -f spring-app-container '
+//             sh 'docker rmi -f makarajr126/spring-app:latest '
+//            }
 //         }
+
+       stage('Build & Push Docker Image') {
+             steps {
+                 script {
+                     def commitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                     def latestTag  = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:latest"
+                     def commitTag  = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:${commitHash}"
+
+                     docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_CRED_ID}") {
+                         def app = docker.build("${latestTag}", ".")
+
+                        app.run("-d -p 9090:9090 --name spring-app-container")
+
+                     }
+                 }
+             }
+        }
     }
 
     post {
