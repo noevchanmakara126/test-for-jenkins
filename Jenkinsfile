@@ -1,10 +1,10 @@
 pipeline {
-    agent { label 'docker-agent' } // The label of your new pod template
+    agent any // Use your GCP node label in Jenkins
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        DOCKERHUB_CREDENTIALS = credentials('d3b37208-0637-449b-bbd2-e15241f4409c')  // Jenkins credentials ID
         DOCKER_IMAGE = "makarajr126/spring-app"
-        CONTAINER_NAME = "spring-app-c"
+        CONTAINER_NAME = "spring-app"
     }
 
     stages {
@@ -12,9 +12,12 @@ pipeline {
             steps {
                 sh """
                 if [ \$(docker ps -q -f name=${CONTAINER_NAME}) ]; then
+                    echo "Stopping container ${CONTAINER_NAME}"
                     docker stop ${CONTAINER_NAME}
                 fi
+
                 if [ \$(docker ps -a -q -f name=${CONTAINER_NAME}) ]; then
+                    echo "Removing container ${CONTAINER_NAME}"
                     docker rm ${CONTAINER_NAME}
                 fi
                 """
@@ -47,14 +50,18 @@ pipeline {
             steps {
                 sh """
                 docker pull ${DOCKER_IMAGE}:${BUILD_NUMBER}
-                docker run -d --name ${CONTAINER_NAME} -p 8080:8080 ${DOCKER_IMAGE}:${BUILD_NUMBER}
+                docker run -d --name ${CONTAINER_NAME} -p 9090:9090 ${DOCKER_IMAGE}:${BUILD_NUMBER}
                 """
             }
         }
     }
 
     post {
-        success { echo "✅ Deployment successful! Version: ${BUILD_NUMBER}" }
-        failure { echo "❌ Deployment failed." }
+        success {
+            echo "✅ Deployment successful! Running version: ${BUILD_NUMBER}"
+        }
+        failure {
+            echo "❌ Deployment failed. Check logs."
+        }
     }
 }
