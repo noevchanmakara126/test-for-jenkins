@@ -3,7 +3,9 @@ pipeline {
     agent {
         label 'docker-agent'
     }
-
+   triggers {
+        githubPush()   // Trigger on GitHub push
+    }
     environment {
         DOCKERHUB_CREDENTIALS = credentials('d3b37208-0637-449b-bbd2-e15241f4409c')  // Jenkins credentials ID
         DOCKER_IMAGE = "makarajr126/spring-app"
