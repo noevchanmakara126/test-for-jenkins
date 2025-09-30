@@ -35,22 +35,22 @@ pipeline {
            }
         }
 
-        stage('Build & Push Docker Image') {
-            steps {
-                script {
-                    def commitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-                    def latestTag  = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:latest"
-                    def commitTag  = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:${commitHash}"
-
-                    docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_CRED_ID}") {
-                        def app = docker.build("${latestTag}", ".")
-
-                       app.run("-d -p 9090:9090 --name spring-app-container")
-
-                    }
-                }
-            }
-        }
+//         stage('Build & Push Docker Image') {
+//             steps {
+//                 script {
+//                     def commitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+//                     def latestTag  = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:latest"
+//                     def commitTag  = "${env.DOCKER_HUB_USERNAME}/${env.DOCKER_IMAGE_NAME}:${commitHash}"
+//
+//                     docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_CRED_ID}") {
+//                         def app = docker.build("${latestTag}", ".")
+//
+//                        app.run("-d -p 9090:9090 --name spring-app-container")
+//
+//                     }
+//                 }
+//             }
+//         }
     }
 
     post {
