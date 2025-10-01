@@ -1,73 +1,29 @@
 pipeline {
-    agent {
-        kubernetes {
-            defaultContainer 'docker'
-            yaml """
-apiVersion: v1
-kind: Pod
-spec:
-  containers:
-  - name: docker
-    image: docker:20.10.17
-    command:
-    - cat
-    tty: true
-    volumeMounts:
-    - mountPath: /var/run/docker.sock
-      name: docker-sock
-  - name: maven
-    image: maven:3.9.3-eclipse-temurin-21
-    command:
-    - cat
-    tty: true
-  volumes:
-  - name: docker-sock
-    hostPath:
-      path: /var/run/docker.sock
-"""
-        }
-    }
-
-    environment {
-        REGISTRY = "docker.io/makarajr126"   // change to your registry
-        IMAGE_NAME = "spring-mini-project"
-    }
+    agent any
 
     stages {
-        stage('Build JAR') {
+        stage('Pull Spring App Image') {
             steps {
-                container('maven') {
-                    sh 'mvn clean package -DskipTests'
+                script {
+                    sh 'docker pull makarjr126/spring-app:latest'
                 }
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Run Spring App Container') {
             steps {
-                container('docker') {
+                script {
+                    // Stop and remove old container if exists
                     sh '''
-                    IMAGE_TAG=${BUILD_NUMBER}
-                    docker build -t $REGISTRY/$IMAGE_NAME:$IMAGE_TAG .
+                        if [ "$(docker ps -aq -f name=spring-app)" ]; then
+                            docker rm -f spring-app || true
+                        fi
                     '''
+
+                    // Run new container
+                    sh 'docker run -d --name spring-app -p 8080:8080 makarjr126/spring-app:latest'
                 }
             }
         }
-
-        stage('Push Docker Image') {
-            steps {
-                container('docker') {
-                    withCredentials([usernamePassword(credentialsId: 'dadfa3fe4-30a1-472d-8e57-14f82295a72f', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh '''
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                        IMAGE_TAG=${BUILD_NUMBER}
-                        docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
-                        '''
-                    }
-                }
-            }
-        }
-
-
-
     }
 }
