@@ -1,19 +1,8 @@
 pipeline {
     agent {
         kubernetes {
-            label 'docker-agent'
+            inheritFrom 'docker-agent-template'
             defaultContainer 'docker'
-            yaml """
-apiVersion: v1
-kind: Pod
-spec:
-  containers:
-  - name: docker
-    image: docker:24.0-dind
-    command:
-    - cat
-    tty: true
-"""
         }
     }
 
@@ -29,11 +18,9 @@ spec:
                 container('docker') {
                     sh """
                     if [ \$(docker ps -q -f name=${CONTAINER_NAME}) ]; then
-                        echo "Stopping container ${CONTAINER_NAME}"
                         docker stop ${CONTAINER_NAME}
                     fi
                     if [ \$(docker ps -a -q -f name=${CONTAINER_NAME}) ]; then
-                        echo "Removing container ${CONTAINER_NAME}"
                         docker rm ${CONTAINER_NAME}
                     fi
                     """
