@@ -105,7 +105,7 @@ spec:
                                git config user.email "jrmakara97@gmail.com"
                                git add deployment.yaml
                                git commit -m "Update image tag to ${BUILD_NUMBER}" || echo "No changes to commit"
-                               git push https://${GIT_USER}:${GIT_PASS}@github.com/noevchanmakara126/manifest-testing.git HEAD:main
+                               git push https://$GIT_TOKEN@github.com/noevchanmakara126/manifest-testing.git HEAD:main
                            '''
                        }
                    }
