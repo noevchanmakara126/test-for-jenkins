@@ -98,7 +98,7 @@ spec:
        }
         stage('Commit & Push Manifest') {
                    steps {
-                       withCredentials([usernamePassword(credentialsId: 'a094976e-2529-476f-befa-7137fc60af94', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                       withCredentials([string(credentialsId: 'a094976e-2529-476f-befa-7137fc60af94', variable: 'GIT_TOKEN')]) {
                            sh '''
                                cd manifest-testing
                                git config user.name "Noev Chanmakara"
