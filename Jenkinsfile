@@ -37,15 +37,15 @@ spec:
        stages('Check if git repo exists') {
            steps {
                sh '''
-               REPO_URL="https://github.com/noevchanmakara126/test-for-jenkins.git"
+                       REPO_DIR="test-for-jenkins"
 
-               if git ls-remote $REPO_URL &> /dev/null; then
-                   echo "Repository exists!"
-               else
-                   echo "Repository does not exist or cannot be accessed."
-                   exit 1
-               fi
-               '''
+                       if [ -d "$REPO_DIR" ]; then
+                           echo "Repository folder exists! Removing it..."
+                           rm -rf "$REPO_DIR"
+                       else
+                           echo "Repository folder does not exist. Nothing to remove."
+                       fi
+                       '''
            }
        }
         stages('Clone the git repo'){
@@ -63,12 +63,12 @@ spec:
                 }
             }
         }
-         stages('Push Image'){
-                    steps {
-                        container('docker'){
-                           sh 'docker push makarajr126 makarajr126/spring-app:latest'
-                        }
-                    }
+        stages('Push Image'){
+            steps {
+                container('docker'){
+                    sh 'docker push makarajr126/spring-app:latest'
                 }
+            }
+        }
     }
 }
