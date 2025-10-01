@@ -1,10 +1,31 @@
 pipeline {
-    agent any
+    agent {
+        kubernetes {
+            yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: docker
+    image: docker:24.0.7-cli
+    command:
+    - cat
+    tty: true
+    volumeMounts:
+    - name: dockersock
+      mountPath: /var/run/docker.sock
+  volumes:
+  - name: dockersock
+    hostPath:
+      path: /var/run/docker.sock
+"""
+        }
+    }
 
     stages {
         stage('Pull Spring App Image') {
             steps {
-                script {
+                container('docker') {
                     sh 'docker pull makarjr126/spring-app:latest'
                 }
             }
@@ -12,16 +33,11 @@ pipeline {
 
         stage('Run Spring App Container') {
             steps {
-                script {
-                    // Stop and remove old container if exists
+                container('docker') {
                     sh '''
-                        if [ "$(docker ps -aq -f name=spring-app)" ]; then
-                            docker rm -f spring-app || true
-                        fi
+                        docker rm -f spring-app || true
+                        docker run -d --name spring-app -p 8080:8080 makarjr126/spring-app:latest
                     '''
-
-                    // Run new container
-                    sh 'docker run -d --name spring-app -p 8080:8080 makarjr126/spring-app:latest'
                 }
             }
         }
