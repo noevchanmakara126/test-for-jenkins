@@ -48,13 +48,20 @@ spec:
                        '''
            }
        }
-       stage('Clone the git repo'){
+        stage('Clone the git repo for manifest'){
             steps {
-                sh 'git clone https://github.com/noevchanmakara126/test-for-jenkins.git'
-                sh 'cd test-for-jenkins '
+                sh 'git clone https://github.com/noevchanmakara126/manifest-testing.git'
                 sh 'ls'
             }
        }
+       stage('Clone the git repo'){
+                   steps {
+                       sh 'git clone https://github.com/noevchanmakara126/test-for-jenkins.git'
+                       sh 'cd test-for-jenkins '
+                       sh 'ls'
+                   }
+              }
+
        stage('Build Image'){
             steps {
                 container('docker'){
