@@ -55,7 +55,7 @@ spec:
                 sh 'ls'
             }
        }
-       stages('Build Image'){
+       stage('Build Image'){
             steps {
                 container('docker'){
                    sh 'docker build -t makarajr126/spring-app:latest .'
@@ -63,7 +63,7 @@ spec:
                 }
             }
        }
-       stages('Push Image'){
+       stage('Push Image'){
             steps {
                 container('docker'){
                     sh 'docker push makarajr126/spring-app:latest'
