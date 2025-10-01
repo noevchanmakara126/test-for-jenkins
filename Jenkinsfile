@@ -21,6 +21,9 @@ spec:
 """
         }
     }
+     triggers {
+            githubPush()
+        }
     stages {
         stage('Docker Login') {
             steps {
@@ -31,7 +34,7 @@ spec:
                 }
             }
         }
-       stage('Check if git repo exists') {
+       stages('Check if git repo exists') {
            steps {
                sh '''
                REPO_URL="https://github.com/noevchanmakara126/test-for-jenkins.git"
@@ -45,23 +48,23 @@ spec:
                '''
            }
        }
-        stage('Clone the git repo'){
-            step {
+        stages('Clone the git repo'){
+            steps {
                 sh 'git clone https://github.com/noevchanmakara126/test-for-jenkins.git'
                 sh 'cd test-for-jenkins '
                 sh 'ls'
             }
         }
-        stage('Build Image'){
-            step {
+        stages('Build Image'){
+            steps {
                 container('docker'){
                    sh 'docker build -t makarajr126/spring-app:latest .'
                    sh 'docker images'
                 }
             }
         }
-         stage('Push Image'){
-                    step {
+         stages('Push Image'){
+                    steps {
                         container('docker'){
                            sh 'docker push makarajr126 makarajr126/spring-app:latest'
                         }
