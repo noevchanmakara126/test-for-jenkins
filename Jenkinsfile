@@ -1,82 +1,50 @@
 pipeline {
-    agent {
-        kubernetes {
-            label 'kaniko-agent'
-            defaultContainer 'jnlp'
-            yaml """
-apiVersion: v1
-kind: Pod
-spec:
-  containers:
-  - name: jnlp
-    image: jenkins/inbound-agent:latest
-    tty: true
-  - name: kaniko
-    image: gcr.io/kaniko-project/executor:latest-debug  # -debug includes shell for sh steps
-    command: ["sleep"]
-    args: ["infinity"]
-    tty: true
-    volumeMounts:
-    - name: docker-config
-      mountPath: /kaniko/.docker
-  volumes:
-  - name: docker-config
-    emptyDir: {}
-"""
-        }
-    }
-
-    environment {
-        DOCKERHUB_CREDENTIALS = credentials('adfa3fe4-30a1-472d-8e57-14f82295a72f')
-        DOCKER_IMAGE = "makarajr126/spring-app"
-    }
+    agent any
 
     stages {
-        stage('Checkout') {
+        stage('Build') {
             steps {
-                checkout scm
+                echo "Building Spring Boot project..."
+                sh './mvnw clean package -DskipTests'
             }
         }
 
-        stage('Build and Push Image with Kaniko') {
+        stage('Deploy') {
             steps {
-                container('kaniko') {
-                    // Create docker config.json for authentication
-                    sh '''
-                        echo "{\"auths\":{\"https://index.docker.io/v1/\":{\"auth\":\"$(echo -n "${DOCKERHUB_CREDENTIALS_USR}:${DOCKERHUB_CREDENTIALS_PSW}" | base64 | tr -d \\\\n)\"}}}" > /kaniko/.docker/config.json
-                    '''
+                echo "Checking if app is already running..."
 
-                    // Build and push both tags
-                    sh """
-                        /kaniko/executor \
-                          --dockerfile=Dockerfile \
-                          --context=dir://workspace/spring-mini-project \
-                          --destination=${DOCKER_IMAGE}:${BUILD_NUMBER} \
-                          --destination=${DOCKER_IMAGE}:latest \
-                          --cache=true
-                    """
-                }
+                // Stop old process if running
+                sh '''
+                PID=$(pgrep -f "spring-boot-application.jar" || true)
+                if [ ! -z "$PID" ]; then
+                  echo "Stopping existing Spring Boot app with PID $PID"
+                  kill -9 $PID
+                  sleep 5
+                fi
+                '''
+
+                // Run new build
+                sh '''
+                echo "Starting new Spring Boot app..."
+                nohup java -jar target/*.jar > app.log 2>&1 &
+                sleep 10
+                '''
             }
         }
 
-        // Optional: Deploy stage (if you still want to run the container somewhere)
-        // Note: You can't use `docker run` in Kaniko pod — consider deploying to Kubernetes instead
-        stage('Deploy to Kubernetes (Optional)') {
+        stage('Verify') {
             steps {
-                script {
-                    echo "✅ Image pushed successfully. Consider deploying to Kubernetes via kubectl or Helm."
-                    // Example: kubectl set image deployment/spring-app *=${DOCKER_IMAGE}:${BUILD_NUMBER}
-                }
+                echo "Verifying if Spring Boot app is running..."
+                sh '''
+                PID=$(pgrep -f "spring-boot-application.jar" || true)
+                if [ -z "$PID" ]; then
+                  echo "App failed to start!"
+                  exit 1
+                else
+                  echo "App is running with PID $PID"
+                fi
+                '''
             }
-        }
-    }
-
-    post {
-        success {
-            echo "✅ Build and push successful! Image: ${DOCKER_IMAGE}:${BUILD_NUMBER}"
-        }
-        failure {
-            echo "❌ Build or push failed."
         }
     }
 }
