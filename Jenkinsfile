@@ -95,3 +95,8 @@ spec:
         success {
             echo "✅ Deployment successful! Running version: ${BUILD_NUMBER}"
         }
+        failure {
+            echo "❌ Deployment failed. Check logs."
+        }
+    }
+}
