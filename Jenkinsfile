@@ -1,8 +1,26 @@
 pipeline {
     agent {
         kubernetes {
-            inheritFrom 'docker-agent-template'
-            defaultContainer 'docker'
+            label 'docker-agent'
+            defaultContainer 'jnlp'
+            yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: jnlp
+    image: jenkins/inbound-agent:latest
+    args: ['\${computer.jnlpmac}', '\${computer.name}']
+    tty: true
+  - name: docker
+    image: docker:24.0.5
+    command:
+    - cat
+    tty: true
+  volumes:
+  - name: workspace-volume
+    emptyDir: {}
+"""
         }
     }
 
@@ -18,9 +36,12 @@ pipeline {
                 container('docker') {
                     sh """
                     if [ \$(docker ps -q -f name=${CONTAINER_NAME}) ]; then
+                        echo "Stopping container ${CONTAINER_NAME}"
                         docker stop ${CONTAINER_NAME}
                     fi
+
                     if [ \$(docker ps -a -q -f name=${CONTAINER_NAME}) ]; then
+                        echo "Removing container ${CONTAINER_NAME}"
                         docker rm ${CONTAINER_NAME}
                     fi
                     """
