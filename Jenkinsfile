@@ -34,7 +34,7 @@ spec:
                 }
             }
         }
-       stages('Check if git repo exists') {
+       stage('Check if git repo exists') {
            steps {
                sh '''
                        REPO_DIR="test-for-jenkins"
@@ -48,27 +48,27 @@ spec:
                        '''
            }
        }
-        stages('Clone the git repo'){
+       stage('Clone the git repo'){
             steps {
                 sh 'git clone https://github.com/noevchanmakara126/test-for-jenkins.git'
                 sh 'cd test-for-jenkins '
                 sh 'ls'
             }
-        }
-        stages('Build Image'){
+       }
+       stages('Build Image'){
             steps {
                 container('docker'){
                    sh 'docker build -t makarajr126/spring-app:latest .'
                    sh 'docker images'
                 }
             }
-        }
-        stages('Push Image'){
+       }
+       stages('Push Image'){
             steps {
                 container('docker'){
                     sh 'docker push makarajr126/spring-app:latest'
                 }
             }
-        }
+       }
     }
 }
