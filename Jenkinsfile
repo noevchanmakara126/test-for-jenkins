@@ -10,12 +10,14 @@ spec:
   containers:
   - name: jnlp
     image: jenkins/inbound-agent:latest
-    args: ['\${computer.jnlpmac}', '\${computer.name}']
+    args:
+      - '\${computer.jnlpmac}'
+      - '\${computer.name}'
     tty: true
   - name: docker
     image: docker:24.0.5
     command:
-    - cat
+      - cat
     tty: true
   volumes:
   - name: workspace-volume
@@ -25,7 +27,7 @@ spec:
     }
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('d3b37208-0637-449b-bbd2-e15241f4409c')
+        DOCKERHUB_CREDENTIALS = credentials('d3b37208-0637-449b-bbd2-e15241f4409c') // Jenkins credentials ID
         DOCKER_IMAGE = "makarajr126/spring-app"
         CONTAINER_NAME = "spring-app"
     }
