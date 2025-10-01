@@ -25,7 +25,7 @@ spec:
     }
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('d3b37208-0637-449b-bbd2-e15241f4409c') // Jenkins credentials ID
+        DOCKERHUB_CREDENTIALS = credentials('adfa3fe4-30a1-472d-8e57-14f82295a72f') // Jenkins credentials ID
         DOCKER_IMAGE = "makarajr126/spring-app"
         CONTAINER_NAME = "spring-app"
     }
