@@ -64,11 +64,11 @@ spec:
        }
         stage('Clone the git repo for manifest'){
             steps {
-                sh 'cd .'
+                sh 'ls'
                 sh 'git clone https://github.com/noevchanmakara126/manifest-testing.git'
                 sh 'ls'
                 sh 'cd manifest-testing'
-                sh 'cat deployment.yaml'
+                sh 'ls'
             }
         }
        stage('Clone the git repo'){
