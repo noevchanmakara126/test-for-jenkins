@@ -1,11 +1,33 @@
 pipeline {
-    // Use the pod template with the label 'docker-agent' you created in Jenkins
     agent {
-        label 'docker-agent'
+        kubernetes {
+            label 'docker-agent'
+            defaultContainer 'docker'
+            yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: docker
+    image: docker:25.0.2-dind
+    command:
+    - cat
+    tty: true
+    volumeMounts:
+    - name: docker-sock
+      mountPath: /var/run/docker.sock
+  volumes:
+  - name: docker-sock
+    hostPath:
+      path: /var/run/docker.sock
+"""
+        }
     }
-   triggers {
+
+    triggers {
         githubPush()   // Trigger on GitHub push
     }
+
     environment {
         DOCKERHUB_CREDENTIALS = credentials('d3b37208-0637-449b-bbd2-e15241f4409c')  // Jenkins credentials ID
         DOCKER_IMAGE = "makarajr126/spring-app"
@@ -13,7 +35,6 @@ pipeline {
     }
 
     stages {
-        // This stage runs inside the 'docker' container defined in your pod template
         stage('Stop & Remove Existing Container') {
             steps {
                 container('docker') {
@@ -74,8 +95,3 @@ pipeline {
         success {
             echo "✅ Deployment successful! Running version: ${BUILD_NUMBER}"
         }
-        failure {
-            echo "❌ Deployment failed. Check logs."
-        }
-    }
-}
