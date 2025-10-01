@@ -21,8 +21,17 @@ spec:
 """
         }
     }
-
     stages {
+        stage('Docker Login') {
+            steps {
+                container('docker') {
+                    withCredentials([usernamePassword(credentialsId: 'adfa3fe4-30a1-472d-8e57-14f82295a72f', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    }
+                }
+            }
+        }
+
         stage('Pull Spring App Image') {
             steps {
                 container('docker') {
