@@ -77,7 +77,8 @@ spec:
 //                   --server $ARGOCD_SERVER
 //                 '''
 //             }
-//         } post {
+//         }
+                post {
                     success {
                         echo "✅ Build and push successful! Image: "
                     }
