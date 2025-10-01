@@ -31,24 +31,41 @@ spec:
                 }
             }
         }
+       stage('Check if git repo exists') {
+           steps {
+               sh '''
+               REPO_URL="https://github.com/noevchanmakara126/test-for-jenkins.git"
 
-        stage('Pull Spring App Image') {
-            steps {
-                container('docker') {
-                    sh 'docker pull makarajr126/spring-app:latest'
+               if git ls-remote $REPO_URL &> /dev/null; then
+                   echo "Repository exists!"
+               else
+                   echo "Repository does not exist or cannot be accessed."
+                   exit 1
+               fi
+               '''
+           }
+       }
+        stage('Clone the git repo'){
+            step {
+                sh 'git clone https://github.com/noevchanmakara126/test-for-jenkins.git'
+                sh 'cd test-for-jenkins '
+                sh 'ls'
+            }
+        }
+        stage('Build Image'){
+            step {
+                container('docker'){
+                   sh 'docker build -t makarajr126/spring-app:latest .'
+                   sh 'docker images'
                 }
             }
         }
-
-        stage('Run Spring App Container') {
-            steps {
-                container('docker') {
-                    sh '''
-                        docker rm -f spring-app || true
-                        docker run -d --name spring-app -p 9090:9090 makarajr126/spring-app:latest
-                    '''
+         stage('Push Image'){
+                    step {
+                        container('docker'){
+                           sh 'docker push makarajr126 makarajr126/spring-app:latest'
+                        }
+                    }
                 }
-            }
-        }
     }
 }
