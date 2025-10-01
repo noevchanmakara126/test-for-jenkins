@@ -10,9 +10,7 @@ spec:
   containers:
   - name: jnlp
     image: jenkins/inbound-agent:latest
-    args:
-      - '\${computer.jnlpmac}'
-      - '\${computer.name}'
+
     tty: true
   - name: docker
     image: docker:24.0.5
