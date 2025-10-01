@@ -67,25 +67,7 @@ spec:
             }
         }
 
-//         stage('Deploy via ArgoCD') {
-//             steps {
-//                 echo "Triggering ArgoCD sync..."
-//                 sh '''
-//                 argocd app sync spring-mini-project \
-//                   --grpc-web \
-//                   --auth-token $ARGOCD_TOKEN \
-//                   --server $ARGOCD_SERVER
-//                 '''
-//             }
-//         }
-                post {
-                    success {
-                        echo "✅ Build and push successful! Image: "
-                    }
-                    failure {
-                        echo "❌ Pipeline failed. Check logs."
-                    }
-                }
+
 
     }
 }
