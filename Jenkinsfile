@@ -9,27 +9,16 @@ kind: Pod
 spec:
   containers:
   - name: docker
-    image: docker:25.0.2-dind
+    image: docker:24.0-dind
     command:
     - cat
     tty: true
-    volumeMounts:
-    - name: docker-sock
-      mountPath: /var/run/docker.sock
-  volumes:
-  - name: docker-sock
-    hostPath:
-      path: /var/run/docker.sock
 """
         }
     }
 
-    triggers {
-        githubPush()   // Trigger on GitHub push
-    }
-
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('d3b37208-0637-449b-bbd2-e15241f4409c')  // Jenkins credentials ID
+        DOCKERHUB_CREDENTIALS = credentials('d3b37208-0637-449b-bbd2-e15241f4409c')
         DOCKER_IMAGE = "makarajr126/spring-app"
         CONTAINER_NAME = "spring-app"
     }
@@ -43,7 +32,6 @@ spec:
                         echo "Stopping container ${CONTAINER_NAME}"
                         docker stop ${CONTAINER_NAME}
                     fi
-
                     if [ \$(docker ps -a -q -f name=${CONTAINER_NAME}) ]; then
                         echo "Removing container ${CONTAINER_NAME}"
                         docker rm ${CONTAINER_NAME}
