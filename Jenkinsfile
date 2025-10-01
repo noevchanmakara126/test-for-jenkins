@@ -35,7 +35,7 @@ spec:
         stage('Pull Spring App Image') {
             steps {
                 container('docker') {
-                    sh 'docker pull makarjr126/spring-app:latest'
+                    sh 'docker pull makarajr126/spring-app:latest'
                 }
             }
         }
@@ -45,7 +45,7 @@ spec:
                 container('docker') {
                     sh '''
                         docker rm -f spring-app || true
-                        docker run -d --name spring-app -p 8080:8080 makarjr126/spring-app:latest
+                        docker run -d --name spring-app -p 8080:8080 makarajr126/spring-app:latest
                     '''
                 }
             }
