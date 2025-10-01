@@ -1,39 +1,36 @@
 pipeline {
     agent {
         kubernetes {
-            defaultContainer 'jnlp'
+            defaultContainer 'docker'
             yaml """
 apiVersion: v1
 kind: Pod
 spec:
   containers:
-  - name: jnlp
-    image: jenkins/inbound-agent:latest
-    tty: true
-  - name: maven
-    image: maven:3.9.3-eclipse-temurin-21
-    command: ['cat']
-    tty: true
-  - name: kaniko
-    image: gcr.io/kaniko-project/executor:latest-debug
-    command: ['sleep']
-    args: ['infinity']
+  - name: docker
+    image: docker:20.10.17
+    command:
+    - cat
     tty: true
     volumeMounts:
-    - name: docker-config
-      mountPath: /kaniko/.docker
+    - mountPath: /var/run/docker.sock
+      name: docker-sock
+  - name: maven
+    image: maven:3.9.3-eclipse-temurin-21
+    command:
+    - cat
+    tty: true
   volumes:
-  - name: docker-config
-    emptyDir: {}
+  - name: docker-sock
+    hostPath:
+      path: /var/run/docker.sock
 """
         }
     }
 
     environment {
-        REGISTRY = "makarajr126"
+        REGISTRY = "docker.io/makarajr126"   // change to your registry
         IMAGE_NAME = "spring-mini-project"
-        IMAGE_TAG = "${BUILD_NUMBER}"
-        FULL_IMAGE = "${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
     }
 
     stages {
@@ -45,33 +42,49 @@ spec:
             }
         }
 
-        stage('Build and Push Docker Image') {
+        stage('Build Docker Image') {
             steps {
-                container('kaniko') {
-                    // Create Docker config.json for authentication
+                container('docker') {
                     sh '''
-                        echo "{\"auths\":{\"https://index.docker.io/v1/\":{\"auth\":\"$(echo -n "${DOCKERHUB_CREDENTIALS_USR}:${DOCKERHUB_CREDENTIALS_PSW}" | base64 | tr -d \\\\n)\"}}}" > /kaniko/.docker/config.json
+                    IMAGE_TAG=${BUILD_NUMBER}
+                    docker build -t $REGISTRY/$IMAGE_NAME:$IMAGE_TAG .
                     '''
-
-                    // Build and push with Kaniko
-                    sh """
-                        /kaniko/executor \\
-                          --dockerfile=Dockerfile \\
-                          --context=dir://workspace/spring-mini-project \\
-                          --destination=${FULL_IMAGE} \\
-                          --cache=true
-                    """
                 }
             }
         }
-    }
 
-    post {
-        success {
-            echo "✅ Build and push successful! Image: ${FULL_IMAGE}"
+        stage('Push Docker Image') {
+            steps {
+                container('docker') {
+                    withCredentials([usernamePassword(credentialsId: 'dadfa3fe4-30a1-472d-8e57-14f82295a72f', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        IMAGE_TAG=${BUILD_NUMBER}
+                        docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+                        '''
+                    }
+                }
+            }
         }
-        failure {
-            echo "❌ Pipeline failed. Check logs."
-        }
+
+//         stage('Deploy via ArgoCD') {
+//             steps {
+//                 echo "Triggering ArgoCD sync..."
+//                 sh '''
+//                 argocd app sync spring-mini-project \
+//                   --grpc-web \
+//                   --auth-token $ARGOCD_TOKEN \
+//                   --server $ARGOCD_SERVER
+//                 '''
+//             }
+//         } post {
+                    success {
+                        echo "✅ Build and push successful! Image: "
+                    }
+                    failure {
+                        echo "❌ Pipeline failed. Check logs."
+                    }
+                }
+
     }
 }
