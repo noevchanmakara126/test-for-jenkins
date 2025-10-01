@@ -1,7 +1,7 @@
 pipeline {
     agent {
         kubernetes {
-            label 'docker-agent'
+            label 'kaniko-agent'
             defaultContainer 'jnlp'
             yaml """
 apiVersion: v1
@@ -10,78 +10,62 @@ spec:
   containers:
   - name: jnlp
     image: jenkins/inbound-agent:latest
-
     tty: true
-  - name: docker
-    image: docker:24.0.5
-    command:
-      - cat
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:latest-debug  # -debug includes shell for sh steps
+    command: ["sleep"]
+    args: ["infinity"]
     tty: true
+    volumeMounts:
+    - name: docker-config
+      mountPath: /kaniko/.docker
   volumes:
-  - name: workspace-volume
+  - name: docker-config
     emptyDir: {}
 """
         }
     }
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('adfa3fe4-30a1-472d-8e57-14f82295a72f') // Jenkins credentials ID
+        DOCKERHUB_CREDENTIALS = credentials('adfa3fe4-30a1-472d-8e57-14f82295a72f')
         DOCKER_IMAGE = "makarajr126/spring-app"
-        CONTAINER_NAME = "spring-app"
     }
 
     stages {
-        stage('Stop & Remove Existing Container') {
+        stage('Checkout') {
             steps {
-                container('docker') {
-                    sh """
-                    if [ \$(docker ps -q -f name=${CONTAINER_NAME}) ]; then
-                        echo "Stopping container ${CONTAINER_NAME}"
-                        docker stop ${CONTAINER_NAME}
-                    fi
+                checkout scm
+            }
+        }
 
-                    if [ \$(docker ps -a -q -f name=${CONTAINER_NAME}) ]; then
-                        echo "Removing container ${CONTAINER_NAME}"
-                        docker rm ${CONTAINER_NAME}
-                    fi
+        stage('Build and Push Image with Kaniko') {
+            steps {
+                container('kaniko') {
+                    // Create docker config.json for authentication
+                    sh '''
+                        echo "{\"auths\":{\"https://index.docker.io/v1/\":{\"auth\":\"$(echo -n "${DOCKERHUB_CREDENTIALS_USR}:${DOCKERHUB_CREDENTIALS_PSW}" | base64 | tr -d \\\\n)\"}}}" > /kaniko/.docker/config.json
+                    '''
+
+                    // Build and push both tags
+                    sh """
+                        /kaniko/executor \
+                          --dockerfile=Dockerfile \
+                          --context=dir://workspace/spring-mini-project \
+                          --destination=${DOCKER_IMAGE}:${BUILD_NUMBER} \
+                          --destination=${DOCKER_IMAGE}:latest \
+                          --cache=true
                     """
                 }
             }
         }
 
-        stage('Build Docker Image') {
+        // Optional: Deploy stage (if you still want to run the container somewhere)
+        // Note: You can't use `docker run` in Kaniko pod — consider deploying to Kubernetes instead
+        stage('Deploy to Kubernetes (Optional)') {
             steps {
-                container('docker') {
-                    sh """
-                    docker build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} .
-                    docker tag ${DOCKER_IMAGE}:${BUILD_NUMBER} ${DOCKER_IMAGE}:latest
-                    """
-                }
-            }
-        }
-
-        stage('Push to Docker Hub') {
-            steps {
-                container('docker') {
-                    withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh """
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                        docker push ${DOCKER_IMAGE}:${BUILD_NUMBER}
-                        docker push ${DOCKER_IMAGE}:latest
-                        docker logout
-                        """
-                    }
-                }
-            }
-        }
-
-        stage('Deploy New Container') {
-            steps {
-                container('docker') {
-                    sh """
-                    docker pull ${DOCKER_IMAGE}:${BUILD_NUMBER}
-                    docker run -d --name ${CONTAINER_NAME} -p 9090:9090 ${DOCKER_IMAGE}:${BUILD_NUMBER}
-                    """
+                script {
+                    echo "✅ Image pushed successfully. Consider deploying to Kubernetes via kubectl or Helm."
+                    // Example: kubectl set image deployment/spring-app *=${DOCKER_IMAGE}:${BUILD_NUMBER}
                 }
             }
         }
@@ -89,10 +73,10 @@ spec:
 
     post {
         success {
-            echo "✅ Deployment successful! Running version: ${BUILD_NUMBER}"
+            echo "✅ Build and push successful! Image: ${DOCKER_IMAGE}:${BUILD_NUMBER}"
         }
         failure {
-            echo "❌ Deployment failed. Check logs."
+            echo "❌ Build or push failed."
         }
     }
 }
